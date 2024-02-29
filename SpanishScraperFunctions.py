@@ -30,10 +30,11 @@ def Navigate_First_Page(subject):
 #gets the number of pages from the first page associated with a search
 def Get_Page_Number():
     #This function assumes you are already using a selenium instance and are on the first page of a desired subject
-    Number_Of_Entries = driver.find_element(By.XPATH, "/html/body/div/div/div/div/form/ul/li/div/div/em").text
-    
-    #gets number of results, divides to pages
-    Number_Of_Pages = math.ceil(int(Number_Of_Entries)/30)
+    try:
+        Number_Of_Entries = driver.find_element(By.XPATH, "/html/body/div/div/div/div/form/ul/li/div/div/em").text   
+        Number_Of_Pages = math.ceil(int(Number_Of_Entries)/30)
+    except:
+        Number_Of_Pages = 0
     return Number_Of_Pages
 
 #Goes through each page and collects the source code HTML and then moves on to the next page
@@ -49,7 +50,10 @@ def Get_HTML(subject):
     HTML_List = []
     for x in range(0, Number_Of_Pages):
         HTML_List.append(driver.page_source)
-        driver.find_element(By.LINK_TEXT, ">>").click()
+        try:
+            driver.find_element(By.LINK_TEXT, ">>").click()
+        except:
+            break
     return HTML_List
 
 #creates a raw dataframe of the correct lines for each category
@@ -145,12 +149,15 @@ def CleanHTMLDataFrame(df):
 #the Main function. Goes to the first page, iterates through grabbing HTML, closes the selenium instance, merges all the raw datasets and then cleans them 
 def FullSubjectScrape(subject):
     HTML_List = Get_HTML(subject)
-    driver.close()
     df_list = []
     for result in HTML_List:
         df_list.append(ParseHTML(result))
-    RawSubjectDF = pd.concat(df_list, ignore_index=True)
+    try:
+        RawSubjectDF = pd.concat(df_list, ignore_index=True)
+    except:
+        RawSubjectDF = pd.DataFrame({"Title":[], "Author": [], "Call_Number": [], "Year":[], "Type":[]})
     FullSubjectDF = CleanHTMLDataFrame(RawSubjectDF)
+    FullSubjectDF['Subject'] = subject
     return FullSubjectDF
 
 
