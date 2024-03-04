@@ -57,7 +57,7 @@ def Get_HTML(subject):
     return HTML_List
 
 #creates a raw dataframe of the correct lines for each category
-def ParseHTML(response):
+def Parse_HTML(response):
 
     #parses HTML
     soup = BeautifulSoup(response, "html.parser")
@@ -69,26 +69,26 @@ def ParseHTML(response):
         raw.append(str(result))
     
     #gets all data corresponding to the image (which shows document type)
-    xpathexpression = 'html>body>div>div>div>div>form>ul>li>ul>li:nth-of-type(4)'
-    images = soup.select(xpathexpression)
+    Xpath_Expression = 'html>body>div>div>div>div>form>ul>li>ul>li:nth-of-type(4)'
+    images = soup.select(Xpath_Expression)
     children = [] 
     for image in images:
         children.append(str(image.findChildren("img", recursive =False)))
     
     #sublists the dd data into the 7 categories: Title, Author, Call_Number, Publisher, Edition, Year and Holdings Statement
-    num_sublists = 7
-    sublists = [[] for _ in range(num_sublists)]
+    Num_Sublists = 7
+    sublists = [[] for _ in range(Num_Sublists)]
     for index, value in enumerate(raw):
-        sublists[index % num_sublists].append(value)
+        sublists[index % Num_Sublists].append(value)
     Title, Author, Call_Number, Publisher, Edition, Year, Holdings_Statement = sublists 
 
     #Creates a dataframe from the title, author, call-number, year and document type lines
-    df = pd.DataFrame({"Title":Title, "Author": Author, "Call_Number": Call_Number, "Year":Year, "Type":children})
+    Raw_Data = pd.DataFrame({"Title":Title, "Author": Author, "Call_Number": Call_Number, "Year":Year, "Type":children})
 
-    return df
+    return Raw_Data
 
 #Cleans the raw dataframe outputted by ParseHTML into a readable format
-def CleanHTMLDataFrame(df):
+def Clean_HTML_Data_Frame(df):
     
     #readies the new columns
     TitleList = []
@@ -147,16 +147,16 @@ def CleanHTMLDataFrame(df):
     return df 
 
 #the Main function. Goes to the first page, iterates through grabbing HTML, closes the selenium instance, merges all the raw datasets and then cleans them 
-def FullSubjectScrape(subject):
+def Full_Subject_Scrape(subject):
     HTML_List = Get_HTML(subject)
     df_list = []
     for result in HTML_List:
-        df_list.append(ParseHTML(result))
+        df_list.append(Parse_HTML(result))
     try:
         RawSubjectDF = pd.concat(df_list, ignore_index=True)
     except:
         RawSubjectDF = pd.DataFrame({"Title":[], "Author": [], "Call_Number": [], "Year":[], "Type":[]})
-    FullSubjectDF = CleanHTMLDataFrame(RawSubjectDF)
+    FullSubjectDF = Clean_HTML_Data_Frame(RawSubjectDF)
     FullSubjectDF['Subject'] = subject
     return FullSubjectDF
 
